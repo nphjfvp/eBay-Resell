@@ -1,5 +1,8 @@
 package de.dealcheck.app.ui
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -70,6 +73,8 @@ fun DealCheckNav(newAnalysisViewModel: NewAnalysisViewModel) {
     }
 
     Scaffold(
+        // Die Statusleiste behandelt die TopAppBar jedes Screens selbst
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             NavigationBar {
                 tabs.forEach { tab ->
@@ -83,7 +88,14 @@ fun DealCheckNav(newAnalysisViewModel: NewAnalysisViewModel) {
             }
         },
     ) { padding ->
-        NavHost(nav, startDestination = Routes.NEW, modifier = Modifier.padding(padding)) {
+        NavHost(
+            nav,
+            startDestination = Routes.NEW,
+            modifier = Modifier
+                .padding(padding)
+                .consumeWindowInsets(padding)
+                .imePadding(),
+        ) {
             composable(Routes.NEW) {
                 NewAnalysisScreen(
                     viewModel = newAnalysisViewModel,
