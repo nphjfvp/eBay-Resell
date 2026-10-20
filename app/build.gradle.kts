@@ -22,6 +22,9 @@ android {
         targetSdk = 35
         versionCode = ciRunNumber
         versionName = ciVersionName
+
+        // Quelle für In-App-Updates (GitHub Releases dieses Repos)
+        buildConfigField("String", "UPDATE_REPO", "\"nphjfvp/eBay-Resell\"")
     }
 
     buildTypes {
@@ -39,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

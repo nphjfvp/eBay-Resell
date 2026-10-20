@@ -36,11 +36,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.dealcheck.app.data.AppSettings
 import de.dealcheck.app.data.SettingsRepository
 import de.dealcheck.app.ui.SettingsViewModel
+import de.dealcheck.app.update.UpdateManager
+import de.dealcheck.app.update.UpdateState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel) {
+fun SettingsScreen(viewModel: SettingsViewModel, updates: UpdateManager) {
     val saved by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -140,6 +145,38 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Speichern") }
             if (savedHint) Text("Gespeichert ✓", color = MaterialTheme.colorScheme.primary)
+
+            HorizontalDivider()
+            UpdateSection(updates)
         }
+    }
+}
+
+@Composable
+private fun UpdateSection(updates: UpdateManager) {
+    val state by updates.state.collectAsStateWithLifecycle()
+    Text("App-Version", style = MaterialTheme.typography.titleMedium)
+    Text("Installiert: ${updates.currentVersion}", style = MaterialTheme.typography.bodyMedium)
+    when (val s = state) {
+        UpdateState.Checking -> Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            Text("  Suche nach Updates …")
+        }
+        UpdateState.UpToDate -> Text("Du hast die neueste Version.", color = MaterialTheme.colorScheme.primary)
+        is UpdateState.Error -> Text(s.message, color = MaterialTheme.colorScheme.error)
+        is UpdateState.Downloading -> Text("Update ${s.release.version} wird geladen … ${(s.progress * 100).toInt()} %")
+        else -> Unit
+    }
+    val available = state.release
+    if (available != null && state !is UpdateState.Downloading) {
+        Button(onClick = updates::show, modifier = Modifier.fillMaxWidth()) {
+            Text("Update auf ${available.version} installieren")
+        }
+    } else {
+        OutlinedButton(
+            onClick = { updates.check() },
+            enabled = state !is UpdateState.Checking && state !is UpdateState.Downloading,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Nach Updates suchen") }
     }
 }

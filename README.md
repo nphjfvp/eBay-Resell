@@ -42,21 +42,26 @@ Je nach Hersteller heißt der Punkt etwas anders: *Einstellungen → Apps → Sp
 
 Falls Google Play Protect warnt („App nicht bekannt“), wähle **Trotzdem installieren**. Die Warnung kommt, weil die App nicht aus dem Play Store stammt.
 
-### Updates
+### Updates direkt in der App
 
-Eine neue Version installierst du einfach über die alte. Meldet Android *„App nicht installiert“* oder *„Paket steht in Konflikt“*, ist die neue APK mit einem anderen Schlüssel signiert. Dann musst du die alte Version erst deinstallieren. Dabei gehen Verlauf und Einstellungen verloren.
+DealCheck prüft beim Start (höchstens alle 6 Stunden), ob es auf GitHub ein neueres **Release** gibt. Wenn ja, erscheint ein Hinweis:
 
-Damit das nicht passiert, kannst du einmalig einen festen Signier-Schlüssel hinterlegen. Das ist optional:
+1. Tippe auf **Jetzt aktualisieren**. Die neue APK wird heruntergeladen.
+2. Tippe auf **Installieren** und bestätige im Android-Fenster.
+3. Beim ersten Update fragt Android, ob DealCheck Apps installieren darf. Erlaube **„Apps aus dieser Quelle installieren“**, gehe zurück und tippe erneut auf **Installieren**.
 
-1. Am PC mit installiertem Java einen Schlüssel erzeugen:
-   ```
-   keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-   ```
-2. Die Datei in Base64 umwandeln: `base64 -w0 debug.keystore` (Linux) bzw. `base64 -i debug.keystore` (macOS).
-3. Auf GitHub unter *Settings → Secrets and variables → Actions → New repository secret* ein Secret mit dem Namen `DEBUG_KEYSTORE_BASE64` anlegen und den Base64-Text einfügen.
-4. Die Datei `debug.keystore` **nicht** ins Repo hochladen.
+Verlauf und Einstellungen bleiben dabei erhalten. Manuell suchen kannst du unter **Einstellungen → Nach Updates suchen**.
 
-Ab dann sind alle Builds gleich signiert. Nach der Umstellung musst du ein einziges Mal deinstallieren.
+Voraussetzungen für den Entwickler bzw. Repo-Besitzer:
+- Updates kommen nur aus **Releases** (Tags `v*`), nicht aus den Builds unter „Actions“.
+- Das Repo muss **öffentlich** sein, damit die App die Releases ohne Anmeldung abrufen kann.
+- Alle APKs müssen mit demselben Schlüssel signiert sein. Dafür muss das Secret `DEBUG_KEYSTORE_BASE64` gesetzt sein, sonst bricht der Release-Build absichtlich ab. Einrichtung: einen Schlüssel erzeugen mit
+  ```
+  keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+  ```
+  Dann `base64 -w0 debug.keystore` ausführen und den Text auf GitHub unter *Settings → Secrets and variables → Actions → New repository secret* als `DEBUG_KEYSTORE_BASE64` speichern. Die Datei selbst nie ins Repo hochladen.
+
+Ein Build aus „Actions“, der **ohne** dieses Secret entstanden ist, hat einen anderen Schlüssel. Wenn du so einen Build installiert hast, deinstalliere ihn einmal und installiere dann das Release. Danach klappen Updates in der App.
 
 ---
 
@@ -106,4 +111,4 @@ Der Key wird nur auf deinem Handy gespeichert, in den privaten App-Daten und ohn
 - Netzwerk: OkHttp; Datenbank: Room; Bilder: Coil
 - Bilder werden vor dem Senden auf max. 1600 px (längste Seite) skaliert und als JPEG gespeichert
 - Build lokal: `./gradlew assembleDebug` (benötigt Android SDK und JDK 17); Tests: `./gradlew testDebugUnitTest`
-- CI (`.github/workflows/build.yml`): Bei jedem Push werden die Tests ausgeführt und eine Debug-APK als Artifact hochgeladen. Ein Tag `v*` (z. B. `git tag v1.0.0 && git push origin v1.0.0`) erstellt zusätzlich ein GitHub-Release mit der APK.
+- CI (`.github/workflows/build.yml`): Bei jedem Push werden die Tests ausgeführt und eine Debug-APK als Artifact hochgeladen. Ein Tag `v*` (z. B. `git tag v1.1.0 && git push origin v1.1.0`) erstellt zusätzlich ein GitHub-Release mit der APK, das die App als Update anbietet. Die Versionsnummer kommt aus dem Tag, versionCode aus der Run-Nummer.

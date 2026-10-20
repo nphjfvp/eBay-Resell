@@ -7,6 +7,7 @@ import de.dealcheck.app.data.AnalysisRepository
 import de.dealcheck.app.data.AppDatabase
 import de.dealcheck.app.data.ImageStore
 import de.dealcheck.app.data.SettingsRepository
+import de.dealcheck.app.update.UpdateManager
 
 class DealCheckApp : Application() {
     lateinit var settings: SettingsRepository
@@ -15,6 +16,8 @@ class DealCheckApp : Application() {
         private set
     lateinit var repository: AnalysisRepository
         private set
+    lateinit var updates: UpdateManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -22,5 +25,6 @@ class DealCheckApp : Application() {
         images = ImageStore(this)
         val db = Room.databaseBuilder(this, AppDatabase::class.java, "dealcheck.db").build()
         repository = AnalysisRepository(db.analysisDao(), images, settings, OpenRouterClient())
+        updates = UpdateManager(this)
     }
 }

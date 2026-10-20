@@ -109,7 +109,7 @@ fun DealCheckNav(newAnalysisViewModel: NewAnalysisViewModel) {
                 )
             }
             composable(Routes.SETTINGS) {
-                SettingsScreen(appViewModel { SettingsViewModel(it.settings) })
+                SettingsScreen(appViewModel { SettingsViewModel(it.settings) }, (LocalContext.current.applicationContext as DealCheckApp).updates)
             }
             composable(
                 Routes.RESULT,

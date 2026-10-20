@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import de.dealcheck.app.ui.DealCheckNav
 import de.dealcheck.app.ui.NewAnalysisViewModel
+import de.dealcheck.app.ui.UpdateDialog
 import de.dealcheck.app.ui.theme.DealCheckTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,10 +29,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) handleShareIntent(intent)
+        if (savedInstanceState == null) {
+            handleShareIntent(intent)
+            (application as DealCheckApp).updates.checkOnStartup()
+        }
+        val updates = (application as DealCheckApp).updates
         setContent {
             DealCheckTheme {
                 DealCheckNav(newAnalysisViewModel)
+                UpdateDialog(updates)
             }
         }
     }
