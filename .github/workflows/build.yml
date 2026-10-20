@@ -1,0 +1,59 @@
+name: Build APK
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Optional: fester Signier-Schlüssel, damit Updates ohne Deinstallieren möglich sind.
+      # Siehe README ("Updates ohne Deinstallieren"). Ohne das Secret wird ein zufälliger
+      # Debug-Schlüssel verwendet.
+      - name: Debug-Keystore aus Secret wiederherstellen
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        if: env.DEBUG_KEYSTORE_BASE64 != ''
+        run: |
+          mkdir -p ~/.android
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+
+      - name: Tests und Debug-APK bauen
+        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
+
+      - name: APK umbenennen
+        run: |
+          NAME="DealCheck-${GITHUB_REF_NAME//\//-}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$NAME"
+          echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
+
+      - name: APK als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: DealCheck-debug-apk
+          path: ${{ env.APK_NAME }}
+
+      - name: GitHub-Release erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.APK_NAME }}
+          generate_release_notes: true
